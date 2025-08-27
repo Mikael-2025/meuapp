@@ -1,34 +1,27 @@
 import React, { useState, useEffect } from 'react';
-// 1. O componente Image já estava importado, vamos usá-lo para os ícones
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { auth, db } from '../../firebaseConfig';
-import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-// --- Componente de Ícone Modificado ---
-// 2. Agora, este componente vai carregar e mostrar as suas imagens PNG
+// --- Ícones com Imagens PNG ---
 const Icon = ({ name, style }) => {
-    // O 'require' é a forma como o React Native carrega imagens locais.
-    // Certifique-se de que os nomes dos ficheiros correspondem aos que estão na sua pasta assets/icons
+    // O 'require' carrega as suas imagens locais.
+    // Certifique-se de que os nomes dos ficheiros correspondem.
     const icons = {
-        'home': require('../../assets/icons/casa.png'), 
-        'projetos': require('../../assets/icons/projetos.png'), 
-        'mensagens': require('../../assets/icons/mensagem.png'), 
-        'perfil': require('../../assets/icons/perfil.png'), 
+        'projetos': require('../../assets/icons/projetos.png'),
         'investimento': require('../../assets/icons/investimento.png'),
         'profissionais': require('../../assets/icons/profissionais.png'),
-        'avaliacao': require('../../assets/icons/avaliacao.png'),
+        'avaliacao': require('../../assets/icons/avaliacao.png')
     };
+    
+    if (!icons[name]) return null; // Se o ícone não for encontrado, não mostra nada.
 
-    // Se um ícone não for encontrado, não mostra nada.
-    if (!icons[name]) return null;
-
-    // 3. Em vez de <Text>, usamos <Image> para mostrar o seu PNG
+    // Usamos <Image> para mostrar o seu ficheiro PNG
     return <Image source={icons[name]} style={[styles.icon, style]} />;
 };
 
-// --- Componentes Reutilizáveis (não precisam de ser alterados) ---
+// --- Componentes Reutilizáveis ---
 const StatCard = ({ title, value, icon, color }) => (
     <View style={styles.statCard}>
         <View style={[styles.statIconContainer, { backgroundColor: color }]}>
@@ -71,12 +64,9 @@ export default function DashboardCliente() {
     fetchUserData();
   }, []);
 
-  const handleLogout = () => {
-    signOut(auth).catch(error => console.error("Erro no logout: ", error));
-  };
-
   return (
     <SafeAreaView style={styles.container}>
+        {/* A barra de navegação foi removida daqui e será gerida pelo App.js */}
         <ScrollView>
             <LinearGradient
                 colors={['#4F46E5', '#818CF8']}
@@ -84,9 +74,7 @@ export default function DashboardCliente() {
             >
                 <View style={styles.headerTopRow}>
                     <Text style={styles.headerTitle}>Olá, {userName.split(' ')[0]}!</Text>
-                    <TouchableOpacity onPress={handleLogout}>
-                        <Image source={{ uri: 'https://placehold.co/100x100/ffffff/4F46E5?text=A' }} style={styles.avatar} />
-                    </TouchableOpacity>
+                    <Image source={{ uri: 'https://placehold.co/100x100/ffffff/4F46E5?text=A' }} style={styles.avatar} />
                 </View>
             </LinearGradient>
 
@@ -106,25 +94,6 @@ export default function DashboardCliente() {
                 <ProjectCard title="Website Corporativo" status="Aguardando" professional="Juliana Costa" price="4.500" progress={30} />
             </View>
         </ScrollView>
-
-        <View style={styles.navBar}>
-            <TouchableOpacity style={styles.navButton}>
-                <Icon name="home" style={[styles.navIcon, styles.navIconActive]} />
-                <Text style={[styles.navText, styles.navTextActive]}>Início</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton}>
-                <Icon name="projetos" style={styles.navIcon} />
-                <Text style={styles.navText}>Projetos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton}>
-                <Icon name="mensagens" style={styles.navIcon} />
-                <Text style={styles.navText}>Mensagens</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton}>
-                <Icon name="perfil" style={styles.navIcon} />
-                <Text style={styles.navText}>Perfil</Text>
-            </TouchableOpacity>
-        </View>
     </SafeAreaView>
   );
 }
@@ -156,7 +125,7 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         borderWidth: 2,
-        borderColor: '#A7F3D0',
+        borderColor: '#C7D2FE',
     },
     statsContainer: {
         flexDirection: 'row',
@@ -187,14 +156,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8,
     },
-    // 4. Estilo para os ícones de imagem
-    icon: {
-        width: 24,
-        height: 24,
+    icon: { // Estilo base para os ícones de imagem
+        width: 22,
+        height: 22,
     },
     statCardIcon: { // Estilo específico para os ícones nos cartões de estatística
-        width: 20,
-        height: 20,
         tintColor: '#4F46E5' // Exemplo de como pode colorir ícones PNG brancos
     },
     statValue: {
@@ -272,34 +238,5 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         marginTop: 4,
-    },
-    navBar: {
-        flexDirection: 'row',
-        height: 70,
-        backgroundColor: '#FFFFFF',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        paddingBottom: 5,
-    },
-    navButton: {
-        alignItems: 'center',
-    },
-    navIcon: {
-        width: 24, // Tamanho para os ícones da barra de navegação
-        height: 24,
-        tintColor: '#9CA3AF', // Cor para o ícone inativo
-    },
-    navIconActive: {
-        tintColor: '#4F46E5', // Cor para o ícone ativo
-    },
-    navText: {
-        fontSize: 12,
-        color: '#9CA3AF',
-        marginTop: 2,
-    },
-    navTextActive: {
-        color: '#4F46E5',
     },
 });

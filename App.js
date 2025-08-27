@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'; // Adicionei componentes para o ecrã de carregamento
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-// 1. Importe o auth e o db, e as funções necessárias
 import { auth, db } from './firebaseConfig';
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-
 
 // Importe todas as suas telas
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import DashboardCliente from './src/screens/DashboardCliente';
 import DashboardProfissional from './src/screens/DashboardProfissional';
+import ProfileScreen from './src/screens/ProfileScreen';
+import ProjectsScreen from './src/screens/ProjectsScreen';
+import CreateProjectScreen from './src/screens/CreateProjectScreen'; // Importe a nova tela
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-// Componente para as telas de Autenticação (Login, Cadastro)
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -25,66 +27,65 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Componente para as telas principais da App (Dashboards)
+const HomeScreen = ({ route }) => {
+    const { userType } = route.params;
+    return userType === 'cliente' ? <DashboardCliente /> : <DashboardProfissional />;
+}
+
+// Navegador de Abas principal
+const AppTabs = ({ route }) => {
+    const { userType } = route.params;
+    return (
+        <Tab.Navigator screenOptions={{ 
+            headerShown: false,
+            tabBarActiveTintColor: '#4F46E5',
+            tabBarInactiveTintColor: '#9CA3AF',
+            }}>
+            <Tab.Screen name="Início" component={HomeScreen} initialParams={{ userType }} />
+            <Tab.Screen name="Projetos" component={ProjectsScreen} initialParams={{ userType }} />
+            <Tab.Screen name="Mensagens" component={View} />
+            <Tab.Screen name="Perfil" component={ProfileScreen} />
+        </Tab.Navigator>
+    );
+};
+
+// Navegador de Pilha que contém as Abas e outras telas
 const AppStack = ({ userType }) => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    {userType === 'cliente' ? (
-      <Stack.Screen name="DashboardCliente" component={DashboardCliente} />
-    ) : (
-      <Stack.Screen name="DashboardProfissional" component={DashboardProfissional} />
-    )}
-  </Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="AppTabs" component={AppTabs} initialParams={{ userType }} />
+        <Stack.Screen name="CreateProject" component={CreateProjectScreen} />
+    </Stack.Navigator>
 );
 
-// Ecrã de carregamento simples
-const SplashScreen = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-    </View>
-);
 
 export default function App() {
-  const [user, setUser] = useState(null); // Guarda o estado do utilizador (logado ou não)
-  const [userType, setUserType] = useState(null); // Guarda o tipo de perfil
-  const [isLoading, setIsLoading] = useState(true); // Controla o ecrã de carregamento inicial
+  const [user, setUser] = useState(null);
+  const [userType, setUserType] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Adicionada uma verificação para garantir que 'auth' foi importado corretamente
-    if (!auth) {
-        console.error("Firebase Auth não foi inicializado. Verifique o seu ficheiro firebaseConfig.js!");
-        setIsLoading(false);
-        return;
-    }
-
-    // 2. onAuthStateChanged é um "ouvinte" que verifica o estado do login em tempo real
     const unsubscribe = onAuthStateChanged(auth, async (authenticatedUser) => {
       if (authenticatedUser) {
-        // Se o utilizador está logado, busca os dados dele no Firestore
         const userDocRef = doc(db, "users", authenticatedUser.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          setUserType(userDoc.data().userType); // Guarda o tipo de perfil
+          setUserType(userDoc.data().userType);
         }
-        setUser(authenticatedUser); // Guarda os dados do utilizador logado
+        setUser(authenticatedUser);
       } else {
-        // Se o utilizador fez logout
         setUser(null);
         setUserType(null);
       }
-      setIsLoading(false); // Termina o carregamento
+      setIsLoading(false);
     });
-
-    // Limpa o "ouvinte" quando o componente é desmontado
     return () => unsubscribe();
   }, []);
 
-  // Enquanto verifica o estado de login, mostra um ecrã de carregamento
   if (isLoading) {
-    return <SplashScreen />; 
+    return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" /></View>; 
   }
 
   return (
-    // 3. Renderiza o conjunto de telas correto com base no estado do utilizador
     <NavigationContainer>
       {user ? <AppStack userType={userType} /> : <AuthStack />}
     </NavigationContainer>

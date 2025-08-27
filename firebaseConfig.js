@@ -7,10 +7,10 @@ import { getFirestore } from "firebase/firestore";
 
 // A sua configuração da web app do Firebase
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_REAL_AQUI", // IMPORTANTE: Coloque a sua chave de API real aqui
+  apiKey: "AIzaSyCbs7Cw_Z8_YJ2FHaruR5HeSTKnfT-2SqQ", // IMPORTANTE: Coloque a sua chave de API real aqui
   authDomain: "obramo.firebaseapp.com",
   projectId: "obramo",
-  storageBucket: "obramo.firebasestorage.app",
+  storageBucket: "obramo.firebasestorage.com",
   messagingSenderId: "187006525723",
   appId: "1:187006525723:web:b495fdf74b2ba53a4a73be",
 };
