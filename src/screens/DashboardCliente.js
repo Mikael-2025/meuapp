@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, SafeAreaView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, FlatList } from 'react-native';
 import { auth, db } from '../../firebaseConfig';
 import { doc, getDoc } from "firebase/firestore";
-import Icon from '../components/Icon';
+import Icon from '../components/Icon'; // Usaremos nosso componente de ícone
 
-const StatCard = ({ title, value, icon, color }) => (
+// Componente para um cartão de estatística
+const StatCard = ({ title, value, icon }) => (
     <View style={styles.statCard}>
-        <View style={[styles.statIconContainer, { backgroundColor: color }]}>
-            <Icon name={icon} style={styles.statCardIcon} />
-        </View>
+        <Icon name={icon} style={styles.statIcon} />
         <Text style={styles.statValue}>{value}</Text>
         <Text style={styles.statTitle}>{title}</Text>
     </View>
 );
 
+// Componente para um cartão de projeto
 const ProjectCard = ({ title, status, professional, progress }) => (
     <View style={styles.projectCard}>
         <View style={styles.projectHeader}>
@@ -31,6 +30,7 @@ const ProjectCard = ({ title, status, professional, progress }) => (
 
 export default function DashboardCliente() {
   const [userName, setUserName] = useState('');
+
   useEffect(() => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
@@ -45,58 +45,148 @@ export default function DashboardCliente() {
     fetchUserData();
   }, []);
 
+  // Dados de exemplo para a lista de projetos
+  const projects = [
+      { id: '1', title: 'E-commerce App', status: 'Em Andamento', professional: 'Ricardo Silva', progress: 45 },
+      { id: '2', title: 'Website Corporativo', status: 'Aguardando', professional: 'Juliana Costa', progress: 30 },
+      { id: '3', title: 'App Mobile', status: 'Concluído', professional: 'Carlos Santos', progress: 100 },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-        <ScrollView>
-            <LinearGradient colors={['#4F46E5', '#818CF8']} style={styles.header}>
-                <View style={styles.headerTopRow}>
-                    <Text style={styles.headerTitle}>Olá, {userName.split(' ')[0]}!</Text>
-                    <Image source={{ uri: 'https://placehold.co/100x100/ffffff/4F46E5?text=A' }} style={styles.avatar} />
-                </View>
-            </LinearGradient>
-            <View style={styles.statsContainer}>
-                <StatCard title="Projetos Ativos" value="4" icon="projetos" color="#EDE9FE" />
-                <StatCard title="Investimento" value="R$ 24.7k" icon="investimento" color="#DCFCE7" />
-                <StatCard title="Profissionais" value="6" icon="profissionais" color="#DBEAFE" />
-                <StatCard title="Avaliação" value="4.8 ★" icon="avaliacao" color="#FEF9C3" />
+        {/* Cabeçalho */}
+        <View style={styles.header}>
+            <View>
+                {/* Saudação ao usuário */}
+                <Text style={styles.headerGreeting}>Olá,</Text>
+                <Text style={styles.headerUserName}>{userName.split(' ')[0]}!</Text>
             </View>
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Projetos Recentes</Text>
-                    <TouchableOpacity><Text style={styles.viewAll}>Ver todos</Text></TouchableOpacity>
-                </View>
-                <ProjectCard title="E-commerce App" status="Em Andamento" professional="Ricardo Silva" progress={45} />
-                <ProjectCard title="Website Corporativo" status="Aguardando" professional="Juliana Costa" progress={30} />
+            <View style={styles.headerRight}>
+                <TouchableOpacity>
+                    <Icon name="notificacao" style={styles.headerIcon} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                    <Image source={{ uri: 'https://placehold.co/100x100/ffffff/3B82F6?text=A' }} style={styles.avatar} />
+                </TouchableOpacity>
             </View>
-        </ScrollView>
+        </View>
+
+        {/* Cartões de Estatísticas */}
+        <View style={styles.statsContainer}>
+            <StatCard title="Projetos Ativos" value="4" icon="projetos" />
+            <StatCard title="Investimento" value="R$ 24.7k" icon="investimento" />
+            <StatCard title="Profissionais" value="6" icon="profissionais" />
+            <StatCard title="Avaliação" value="4.8 ★" icon="avaliacao" />
+        </View>
+
+        {/* Corpo Principal com a Lista de Projetos */}
+        <View style={styles.mainContent}>
+             <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Projetos em Andamento</Text>
+                <TouchableOpacity><Text style={styles.seeAll}>Ver todos</Text></TouchableOpacity>
+            </View>
+            <FlatList
+                data={projects}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => <ProjectCard {...item} />}
+                showsVerticalScrollIndicator={false}
+            />
+        </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F3F4F6' },
-    header: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
-    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' },
-    avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#C7D2FE' },
-    statsContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', paddingHorizontal: 15, marginTop: -40, marginBottom: 20 },
-    statCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, alignItems: 'center', width: '46%', marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-    statIconContainer: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    statCardIcon: { width: 22, height: 22, tintColor: '#4F46E5' },
-    statValue: { fontSize: 18, fontWeight: 'bold', color: '#111827' },
-    statTitle: { fontSize: 12, color: '#6B7280' },
-    section: { paddingHorizontal: 20, marginBottom: 20 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#111827' },
-    viewAll: { fontSize: 14, color: '#4F46E5', fontWeight: '600' },
-    projectCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 15, marginBottom: 15 },
-    projectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    projectTitle: { fontSize: 16, fontWeight: 'bold' },
-    statusBadge: { fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontWeight: 'bold', overflow: 'hidden' },
+    container: { flex: 1, backgroundColor: '#1E40AF' },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 60,
+        paddingHorizontal: 20,
+        paddingBottom: 30,
+    },
+    headerGreeting: { color: '#E0E1DD', fontSize: 18 },
+    headerUserName: { color: '#FFFFFF', fontSize: 28, fontWeight: 'bold' },
+    headerRight: { flexDirection: 'row', alignItems: 'center' },
+    headerIcon: { width: 24, height: 24, tintColor: '#FFFFFF', marginHorizontal: 10 },
+    avatar: { width: 40, height: 40, borderRadius: 20, marginLeft: 10 },
+    statsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingHorizontal: 15,
+        paddingBottom: 20,
+    },
+    statCard: {
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 15,
+        padding: 10,
+        width: '23%',
+    },
+    statIcon: { width: 28, height: 28, tintColor: '#FFFFFF', marginBottom: 5 },
+    statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+    statTitle: { color: '#E0E1DD', fontSize: 10, textAlign: 'center' },
+    mainContent: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1F2937' },
+    seeAll: { fontSize: 14, color: '#3B82F6', fontWeight: '600' },
+    projectCard: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        padding: 15,
+        marginBottom: 15,
+    },
+    projectHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    projectTitle: { fontSize: 16, fontWeight: 'bold', color: '#111827' },
+    statusBadge: {
+        fontSize: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        fontWeight: 'bold',
+        overflow: 'hidden',
+    },
     statusEmAndamento: { backgroundColor: '#DBEAFE', color: '#3B82F6' },
     statusAguardando: { backgroundColor: '#FEF3C7', color: '#F59E0B' },
-    projectInfo: { fontSize: 14, color: '#6B7280', marginVertical: 10 },
-    progressBarContainer: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 5 },
-    progressBar: { height: 8, backgroundColor: '#4F46E5', borderRadius: 4 },
-    progressText: { textAlign: 'right', fontSize: 12, color: '#6B7280', marginTop: 4 }
+    statusConcluído: { backgroundColor: '#DCFCE7', color: '#16A34A' },
+    projectInfo: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginVertical: 10,
+    },
+    progressBarContainer: {
+        height: 8,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 4,
+        marginTop: 5,
+    },
+    progressBar: {
+        height: 8,
+        backgroundColor: '#3B82F6',
+        borderRadius: 4,
+    },
+    progressText: {
+        textAlign: 'right',
+        fontSize: 12,
+        color: '#6B7280',
+        marginTop: 4,
+    },
 });
+

@@ -5,7 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 
 // --- Ícones (Placeholders) ---
 const Icon = ({ name }) => {
-    const icons = { 'pix': '❖', 'boleto': '|||', 'fatura': '📄', 'up': '⬆️', 'down': '⬇️' };
+    const icons = { 'pix': '❖', 'boleto': '|||', 'fatura': '', 'up': '⬆️', 'down': '⬇️' };
     return <Text style={styles.quickActionIcon}>{icons[name] || '❓'}</Text>;
 };
 
@@ -105,7 +105,7 @@ export default function PaymentsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
-    header: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#4F46E5' },
+    header: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E40AF' },
     greeting: { color: '#E0E7FF', fontSize: 16 },
     balance: { color: '#FFFFFF', fontSize: 28, fontWeight: 'bold' },
     avatar: { width: 40, height: 40, borderRadius: 20 },
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 10 },
     // Estilos para o novo botão de adicionar cartão
     addCardButton: {
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#1E40AF',
         borderRadius: 12,
         paddingVertical: 15,
         alignItems: 'center',

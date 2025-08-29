@@ -1,379 +1,197 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Modal, FlatList, Alert, ActivityIndicator } from "react-native";
-import * as ImagePicker from 'expo-image-picker';
-
+import React, { useState, useCallback } from 'react';
+// 1. O ScrollView foi removido para que a FlatList seja o container principal, eliminando o aviso.
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert, Dimensions, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { auth, db } from '../../firebaseConfig';
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
-
-const CIDADES = [
-  { id: '1', nome: 'Aracaju, SE' }, { id: '2', nome: 'Belém, PA' }, { id: '3', nome: 'Belo Horizonte, MG' }, { id: '4', nome: 'Boa Vista, RR' }, { id: '5', nome: 'Brasília, DF' }, { id: '6', nome: 'Campo Grande, MS' }, { id: '7', nome: 'Cuiabá, MT' }, { id: '8', nome: 'Curitiba, PR' }, { id: '9', nome: 'Florianópolis, SC' }, { id: '10', nome: 'Fortaleza, CE' }, { id: '11', nome: 'Goiânia, GO' }, { id: '12', nome: 'João Pessoa, PB' }, { id: '13', nome: 'Macapá, AP' }, { id: '14', nome: 'Maceió, AL' }, { id: '15', nome: 'Manaus, AM' }, { id: '16', nome: 'Natal, RN' }, { id: '17', nome: 'Palmas, TO' }, { id: '18', nome: 'Porto Alegre, RS' }, { id: '19', nome: 'Porto Velho, RO' }, { id: '20', nome: 'Recife, PE' }, { id: '21', nome: 'Rio Branco, AC' }, { id: '22', nome: 'Rio de Janeiro, RJ' }, { id: '23', nome: 'Salvador, BA' }, { id: '24', nome: 'São Luís, MA' }, { id: '25', nome: 'São Paulo, SP' }, { id: '26', nome: 'Teresina, PI' }, { id: '27', nome: 'Vitória, ES' },
+// Lista de cidades para o autocompletar
+const BRAZILIAN_CITIES = [
+    "Aracaju, SE", "Belém, PA", "Belo Horizonte, MG", "Boa Vista, RR", "Brasília, DF",
+    "Campo Grande, MS", "Cuiabá, MT", "Curitiba, PR", "Florianópolis, SC", "Fortaleza, CE",
+    "Goiânia, GO", "João Pessoa, PB", "Macapá, AP", "Maceió, AL", "Manaus, AM",
+    "Natal, RN", "Palmas, TO", "Porto Alegre, RS", "Porto Velho, RO", "Recife, PE",
+    "Rio Branco, AC", "Rio de Janeiro, RJ", "Salvador, BA", "São Luís, MA", "São Paulo, SP",
+    "Teresina, PI", "Vitória, ES"
 ];
 
-export default function SignUpScreen({ navigation }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [userType, setUserType] = useState('cliente');
-  const [location, setLocation] = useState('');
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+const { width: screenWidth } = Dimensions.get('window');
 
-  const handleSignUp = async () => {
-    if (!name || !email || !password) {
-        Alert.alert("Erro", "Por favor, preencha os campos obrigatórios (*).");
-        return;
-    }
-    setIsLoading(true);
+// 2. Os componentes do formulário foram separados para otimização
+const FormHeader = ({ name, setName, email, setEmail, password, setPassword, phone, setPhone, location, handleLocationChange }) => (
+    <>
+        <Text style={styles.title}>Criar Conta</Text>
+        <TextInput style={styles.input} placeholder="Nome Completo" value={name} onChangeText={setName} />
+        <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+        <TextInput style={styles.input} placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
+        <TextInput style={styles.input} placeholder="Telefone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <TextInput 
+            style={styles.input} 
+            placeholder="Sua cidade / estado" 
+            value={location} 
+            onChangeText={handleLocationChange} 
+        />
+    </>
+);
 
-    try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        await setDoc(doc(db, "users", user.uid), {
-            name: name,
-            email: email,
-            phone: telefone,
-            location: location,
-            userType: userType,
-            profilePictureUrl: null,
-            createdAt: new Date(),
-        });
-
-        // Não precisamos de desativar o isLoading ou navegar manualmente.
-        // O "ouvinte" no App.js irá gerir a mudança de tela automaticamente.
-        // Alert.alert("Sucesso!", "A sua conta foi criada.");
-        // navigation.navigate('Login'); // <-- LINHA REMOVIDA
-
-    } catch (error) {
-        setIsLoading(false);
-        console.error("Erro no cadastro: ", error);
-        Alert.alert("Erro no Cadastro", error.message);
-    }
-  };
-
-
-  const onSelectCity = (cidade) => {
-    setLocation(cidade.nome);
-    setModalVisible(false);
-  };
-
-  const pickImageAsync = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Desculpe, precisamos da permissão da câmara para isto funcionar!');
-      return;
-    }
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-    }
-  };
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecione uma Cidade</Text>
-            <FlatList
-              data={CIDADES}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.cityItem} onPress={() => onSelectCity(item)}>
-                  <Text style={styles.cityText}>{item.nome}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeButtonText}>Fechar</Text>
+const FormFooter = ({ userType, setUserType, handleSignUp, isLoading, navigation }) => (
+    <>
+        <Text style={styles.typeSelectorLabel}>Eu sou:</Text>
+        <View style={styles.typeSelectorContainer}>
+            <TouchableOpacity 
+                style={[styles.typeButton, userType === 'cliente' && styles.typeButtonSelected]}
+                onPress={() => setUserType('cliente')}
+            >
+                <Text style={[styles.typeButtonText, userType === 'cliente' && styles.typeButtonTextSelected]}>Cliente</Text>
             </TouchableOpacity>
-          </View>
+            <TouchableOpacity 
+                style={[styles.typeButton, userType === 'profissional' && styles.typeButtonSelected]}
+                onPress={() => setUserType('profissional')}
+            >
+                <Text style={[styles.typeButtonText, userType === 'profissional' && styles.typeButtonTextSelected]}>Profissional</Text>
+            </TouchableOpacity>
         </View>
-      </Modal>
-
-      <Text style={styles.title}>Informações Básicas</Text>
-      <Text style={styles.subtitle}>Conte-nos um pouco sobre você</Text>
-
-      <View style={styles.row}>
-        <TextInput 
-          placeholder="Nome Completo *" 
-          style={[styles.input, styles.inputHalf]} 
-          placeholderTextColor="#666"
-          value={name}
-          onChangeText={setName} 
-        />
-        <TextInput 
-          placeholder="Email *" 
-          style={[styles.input, styles.inputHalf]} 
-          placeholderTextColor="#666" 
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-      </View>
-
-      <View style={styles.row}>
-        <TextInput 
-          placeholder="Telefone" 
-          style={[styles.input, styles.inputHalf]} 
-          placeholderTextColor="#666" 
-          keyboardType="phone-pad"
-          value={telefone}
-          onChangeText={setTelefone}
-        />
-        <TouchableOpacity 
-          style={[styles.input, styles.inputHalf, styles.locationButton]}
-          onPress={() => setModalVisible(true)}
-        >
-            <Text style={styles.locationButtonText}>
-              {location || 'Selecione sua cidade'}
-            </Text>
+        <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp} disabled={isLoading}>
+            <Text style={styles.primaryButtonText}>{isLoading ? 'A criar...' : 'CRIAR CONTA'}</Text>
         </TouchableOpacity>
-      </View>
-      
-      <TextInput
-        placeholder="Senha *"
-        secureTextEntry
-        style={styles.input}
-        placeholderTextColor="#666"
-        value={password}
-        onChangeText={setPassword}
-      />
+        <View style={styles.footer}>
+            <Text style={styles.footerText}>Já tem uma conta? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.footerLink}>Faça login aqui</Text>
+            </TouchableOpacity>
+        </View>
+    </>
+);
 
-      <Text style={styles.label}>Foto de Perfil</Text>
-      <View style={styles.profilePicContainer}>
-          <View style={styles.avatarPlaceholder}>
-            <Image 
-                source={{ uri: profileImage || 'https://placehold.co/100x100/E0E7FF/1E40AF?text=👤' }} 
-                style={styles.avatarImage} 
-            />
-          </View>
-          <TouchableOpacity style={styles.uploadButton} onPress={pickImageAsync}>
-              <Text style={styles.uploadButtonText}>Carregar Foto</Text>
-          </TouchableOpacity>
-      </View>
 
-      <Text style={styles.label}>Eu sou:</Text>
-      <View style={styles.userTypeContainer}>
-        <TouchableOpacity 
-          style={[styles.userTypeButton, userType === 'cliente' && styles.userTypeButtonSelected]}
-          onPress={() => setUserType('cliente')}
-        >
-          <Text style={[styles.userTypeText, userType === 'cliente' && styles.userTypeTextSelected]}>Cliente</Text>
+export default function SignUpScreen({ navigation }) {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [location, setLocation] = useState('');
+    const [userType, setUserType] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [filteredCities, setFilteredCities] = useState([]);
+
+    const handleLocationChange = (text) => {
+        setLocation(text);
+        if (text) {
+            const suggestions = BRAZILIAN_CITIES.filter(city => city.toLowerCase().includes(text.toLowerCase()));
+            setFilteredCities(suggestions);
+        } else {
+            setFilteredCities([]);
+        }
+    };
+
+    const onCitySelect = (city) => {
+        setLocation(city);
+        setFilteredCities([]);
+    };
+
+    const handleSignUp = () => {
+        if (!name || !email || !password || !userType || !phone || !location) {
+            Alert.alert("Erro", "Por favor, preencha todos os campos e selecione um tipo de perfil.");
+            return;
+        }
+        setIsLoading(true);
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(userCredential => {
+                const user = userCredential.user;
+                setDoc(doc(db, "users", user.uid), { name, email, userType, phone, location, profilePictureUrl: null });
+            })
+            .catch(error => Alert.alert("Erro no Cadastro", error.message))
+            .finally(() => setIsLoading(false));
+    };
+
+    const curvePath = `M0,0 L0,150 Q${screenWidth / 2},220 ${screenWidth},150 L${screenWidth},0 Z`;
+
+    // 3. O 'useCallback' otimiza o FlatList para evitar que ele se redesenhe a cada letra digitada, corrigindo o bug de travamento.
+    const renderSuggestionItem = useCallback(({ item }) => (
+        <TouchableOpacity style={styles.suggestionItem} onPress={() => onCitySelect(item)}>
+            <Text>{item}</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.userTypeButton, userType === 'profissional' && styles.userTypeButtonSelected]}
-          onPress={() => setUserType('profissional')}
-        >
-          <Text style={[styles.userTypeText, userType === 'profissional' && styles.userTypeTextSelected]}>Profissional</Text>
-        </TouchableOpacity>
-      </View>
+    ), []);
 
-      <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={isLoading}>
-        {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-        ) : (
-            <Text style={styles.buttonText}>Cadastrar</Text>
-        )}
-      </TouchableOpacity>
+    // O conteúdo da lista é composto por um cabeçalho (a maioria do formulário), a lista de cidades, e um rodapé (o resto do formulário).
+    const listContent = [
+        { type: 'header', id: 'header' },
+        ...filteredCities.map(city => ({ type: 'city', id: city })),
+        { type: 'footer', id: 'footer' }
+    ];
 
-      <View style={styles.loginContainer}>
-        <Text style={styles.text}>Já tem uma conta? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.link}>Faça login</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
+    const renderItem = useCallback(({ item }) => {
+        if (item.type === 'header') {
+            return <FormHeader {...{ name, setName, email, setEmail, password, setPassword, phone, setPhone, location, handleLocationChange }} />;
+        }
+        if (item.type === 'city') {
+            return renderSuggestionItem({ item: item.id });
+        }
+        if (item.type === 'footer') {
+            return <FormFooter {...{ userType, setUserType, handleSignUp, isLoading, navigation }} />;
+        }
+        return null;
+    }, [name, email, password, phone, location, userType, isLoading, filteredCities]); // Dependências para redesenhar
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+                <View style={styles.headerContainer}>
+                    <Svg height="100%" width="100%" style={{ position: 'absolute' }}>
+                        <Path d={curvePath} fill="#3B82F6" />
+                    </Svg>
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                        <Text style={styles.backButtonText}>{''}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* A FlatList agora controla toda a rolagem da tela */}
+                <FlatList
+                    style={styles.formContainer}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    data={listContent}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item.id}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                />
+            </KeyboardAvoidingView>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1E40AF",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  input: {
-    width: "100%",
-    height: 45,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9'
-  },
-  inputHalf: {
-      width: '48%',
-  },
-  locationButton: {
-      justifyContent: 'center',
-  },
-  locationButtonText: {
-      color: '#333',
-  },
-  label: {
-    alignSelf: 'flex-start',
-    marginLeft: 5,
-    marginBottom: 10,
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  profilePicContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 20,
-  },
-  avatarPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E0E7FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  avatarImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-  },
-  uploadButton: {
-      backgroundColor: '#2563EB',
-      paddingVertical: 10,
-      paddingHorizontal: 15,
-      borderRadius: 6,
-  },
-  uploadButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-  },
-  userTypeContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  userTypeButton: {
-    width: '48%',
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userTypeButtonSelected: {
-    backgroundColor: '#E0E7FF',
-    borderColor: '#2563EB',
-  },
-  userTypeText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  userTypeTextSelected: {
-    color: '#1E40AF',
-    fontWeight: 'bold',
-  },
-  button: {
-    width: "100%",
-    height: 45,
-    backgroundColor: "#2563EB",
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 14,
-    color: "#333",
-  },
-  link: {
-    color: "#2563EB",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    width: '80%',
-    borderRadius: 10,
-    padding: 20,
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  cityItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  cityText: {
-    fontSize: 16,
-  },
-  closeButton: {
-    marginTop: 20,
-    backgroundColor: '#2563EB',
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    headerContainer: { height: 200 },
+    backButton: { position: 'absolute', top: 50, left: 20, zIndex: 1 },
+    backButtonText: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
+    formContainer: {
+        marginTop: -50,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        paddingHorizontal: 30,
+    },
+    title: { fontSize: 24, fontWeight: 'bold', color: '#1F2937', textAlign: 'center', marginBottom: 20, paddingTop: 30 },
+    input: { backgroundColor: '#F3F4F6', paddingVertical: 15, paddingHorizontal: 20, borderRadius: 10, marginBottom: 15, fontSize: 16 },
+    suggestionItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+        // Estilo ligeiramente diferente para se destacar dos inputs
+        backgroundColor: '#FAFAFA' 
+    },
+    typeSelectorLabel: { fontSize: 14, color: '#6B7280', marginBottom: 10, marginTop: 5 },
+    typeSelectorContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+    typeButton: { flex: 1, padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB', alignItems: 'center', marginHorizontal: 5 },
+    typeButtonSelected: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+    typeButtonText: { color: '#374151', fontWeight: '600' },
+    typeButtonTextSelected: { color: '#FFFFFF' },
+    primaryButton: { backgroundColor: '#3B82F6', padding: 15, borderRadius: 30, alignItems: 'center', marginTop: 10 },
+    primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+    footerText: { fontSize: 14, color: '#6B7280' },
+    footerLink: { fontSize: 14, color: '#3B82F6', fontWeight: 'bold' },
 });
+

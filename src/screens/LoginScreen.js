@@ -1,134 +1,146 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+// 1. Importe o 'Dimensions' para obter o tamanho da tela
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert, Dimensions } from 'react-native';
+import { auth } from '../../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import Svg, { Path } from 'react-native-svg';
 
-// 1. Importe o 'auth' do seu ficheiro de configuração
-import { auth } from '../../firebaseConfig'; // Ajuste o caminho se necessário
-// Importe a função de login do Firebase
-import { signInWithEmailAndPassword } from "firebase/auth";
+// 2. Obtenha a largura da tela do dispositivo
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-  // 2. Função para gerir o Login
-  const handleLogin = async () => {
-    if (!email || !password) {
-        Alert.alert("Erro", "Por favor, preencha o email e a senha.");
-        return;
-    }
-    setIsLoading(true);
+    const handleLogin = () => {
+        if (!email || !password) {
+            Alert.alert("Erro", "Por favor, preencha o email e a senha.");
+            return;
+        }
+        setIsLoading(true);
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(error => {
+                Alert.alert("Erro no Login", "O email ou a senha estão incorretos.");
+                console.error(error);
+            })
+            .finally(() => setIsLoading(false));
+    };
 
-    try {
-        // Tenta fazer o login com o email e senha fornecidos
-        await signInWithEmailAndPassword(auth, email, password);
-        
-        // Se o login for bem-sucedido, o código continua aqui.
-        // Por agora, vamos apenas mostrar um alerta de sucesso.
-        // No futuro, aqui é onde o utilizador seria redirecionado para o Dashboard.
-        // Ex: navigation.replace('Dashboard');
-        
-        // Não precisamos de desativar o isLoading aqui, porque um 'listener' de autenticação
-        // no App.js irá gerir a mudança de tela.
+    // 3. Crie a string do caminho da curva dinamicamente com a largura da tela
+    const curvePath = `M0,0 L0,200 Q${screenWidth / 2},280 ${screenWidth},200 L${screenWidth},0 Z`;
 
-    } catch (error) {
-        setIsLoading(false);
-        Alert.alert("Erro de Login", "Email ou senha inválidos. Por favor, tente novamente.");
-        console.error("Erro no login:", error);
-    }
-  };
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.headerContainer}>
+                <Svg height="100%" width="100%" style={{ position: 'absolute' }}>
+                    <Path
+                        d={curvePath} // 4. Use o caminho dinâmico aqui
+                        fill="#3B82F6"
+                    />
+                </Svg>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                    <Text style={styles.backButtonText}>{'<'}</Text>
+                </TouchableOpacity>
+            </View>
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+            <View style={styles.formContainer}>
+                <Text style={styles.title}>Login</Text>
 
-      <TextInput 
-        placeholder="Email" 
-        style={styles.input} 
-        placeholderTextColor="#666"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        placeholder="Senha"
-        secureTextEntry
-        style={styles.input}
-        placeholderTextColor="#666"
-        value={password}
-        onChangeText={setPassword}
-      />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Senha"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
 
-      {/* 3. Botão de Entrar chama a função handleLogin */}
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
-        {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-        ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
-        )}
-      </TouchableOpacity>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={isLoading}>
+                    <Text style={styles.primaryButtonText}>{isLoading ? 'A entrar...' : 'ENTRAR'}</Text>
+                </TouchableOpacity>
 
-      <View style={styles.signupContainer}>
-        <Text style={styles.text}>Não tem uma conta? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.link}>Cadastre-se</Text>
-        </TouchableOpacity>
-      </View>
-
-    </View>
-  );
+                <View style={styles.footer}>
+                    <Text style={styles.footerText}>Não tem uma conta? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                        <Text style={styles.footerLink}>Cadastre-se</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1E40AF",
-    marginBottom: 30,
-  },
-  input: {
-    width: "100%",
-    height: 45,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-  },
-  button: {
-    width: "100%",
-    height: 45,
-    backgroundColor: "#2563EB",
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 14,
-    color: "#333",
-  },
-  link: {
-    color: "#2563EB",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    headerContainer: {
+        height: '35%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 50,
+        left: 20,
+    },
+    backButtonText: {
+        color: '#FFFFFF',
+        fontSize: 24,
+    },
+    formContainer: {
+        flex: 1,
+        padding: 30,
+        marginTop: -50,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1F2937',
+        textAlign: 'center',
+        marginBottom: 30,
+    },
+    input: {
+        backgroundColor: '#F3F4F6',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 15,
+        fontSize: 16,
+    },
+    primaryButton: {
+        backgroundColor: '#3B82F6',
+        padding: 15,
+        borderRadius: 30,
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    primaryButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 30,
+    },
+    footerText: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    footerLink: {
+        fontSize: 14,
+        color: '#3B82F6',
+        fontWeight: 'bold',
+    },
 });
+

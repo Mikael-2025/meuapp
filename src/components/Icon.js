@@ -10,6 +10,7 @@ const Icon = ({ name, focused, style }) => {
         'projetos': require('../../assets/icons/projetos.png'),
         'mensagens': require('../../assets/icons/mensagem.png'),
         'perfil': require('../../assets/icons/perfil.png'),
+        'pagamentos': require('../../assets/icons/pagamentos.png'),
 
         // Ícones dos StatCards - Caminhos corrigidos para ../../
         'investimento': require('../../assets/icons/investimento.png'),

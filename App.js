@@ -10,6 +10,8 @@ import { doc, getDoc } from "firebase/firestore";
 
 import Icon from './src/components/Icon';
 
+// 1. Importe a nova tela de Boas-Vindas
+import WelcomeScreen from './src/screens/WelcomeScreen'; 
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import DashboardCliente from './src/screens/DashboardCliente';
@@ -20,13 +22,15 @@ import CreateProjectScreen from './src/screens/CreateProjectScreen';
 import MessagesScreen from './src/screens/MessagesScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import PaymentsScreen from './src/screens/PaymentsScreen';
-import AddCardScreen from './src/screens/AddCardScreen'; // 1. Importe a nova tela
+import AddCardScreen from './src/screens/AddCardScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// 2. Modifique o AuthStack para incluir a tela de Boas-Vindas
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Welcome" component={WelcomeScreen} />
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="SignUp" component={SignUpScreen} />
   </Stack.Navigator>
@@ -63,17 +67,14 @@ const AppTabs = ({ route }) => {
     );
 };
 
-// Navegador de Pilha que contém as Abas e outras telas
 const AppStack = ({ userType }) => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="AppTabs" component={AppTabs} initialParams={{ userType }} />
         <Stack.Screen name="CreateProject" component={CreateProjectScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
-        {/* 2. Adicione a nova rota para a tela de adicionar cartão */}
         <Stack.Screen name="AddCard" component={AddCardScreen} />
     </Stack.Navigator>
 );
-
 
 export default function App() {
   const [user, setUser] = useState(null);

@@ -144,7 +144,7 @@ export default function ProfileScreen() {
                 <ActionRow label="Histórico de login" description="Veja os acessos recentes à sua conta." buttonText="Ver Histórico" onPress={() => Alert.alert("Ação", "Mostrar histórico.")} />
             </SectionCard>
             <SectionCard title="Zona de Perigo" subtitle="">
-                <ActionRow label="Desativar conta permanentemente" description="A sua conta e todos os seus dados serão excluídos." buttonText="Excluir Conta" onPress={() => setDeleteModalVisible(true)} danger />
+                <ActionRow label="Desativar conta permanentemente" description="A sua conta e todos os seus dados serão excluídos." buttonText="Excluir, Conta" onPress={() => setDeleteModalVisible(true)} danger />
             </SectionCard>
         </View>
       </ScrollView>
@@ -158,7 +158,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Excluir {userData?.name.split(' ')[0]}</Text>
+                <Text style={styles.modalTitle}>Excluir, {userData?.name.split(' ')[0]}</Text>
                 <Text style={styles.modalWarning}>Atenção! Essa medida é irreversível.</Text>
                 <Text style={styles.modalDescription}>
                     Ao excluir sua conta, você perde acesso total ao seu histórico. Delete apenas se tiver 100% de certeza que não precisará dos dados novamente.
@@ -174,7 +174,7 @@ export default function ProfileScreen() {
                         <Text style={styles.modalCancelButtonText}>Cancelar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                        style={[styles.modalButton, styles.modalDeleteButton, deleteConfirmText !== 'EXCLUIR' && styles.modalButtonDisabled]} 
+                        style={[styles.modalButton, styles.modalDeleteButton, deleteConfirmText !== 'EXCLUIR,' && styles.modalButtonDisabled]} 
                         onPress={handleDeleteAccount}
                         disabled={deleteConfirmText !== 'EXCLUIR'}
                     >
