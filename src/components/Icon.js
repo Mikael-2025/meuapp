@@ -5,16 +5,17 @@ import { Image, StyleSheet } from 'react-native';
 // Ele carrega as imagens PNG da sua pasta de assets.
 const Icon = ({ name, focused, style }) => {
     const icons = {
-        // Ícones da Tab Bar
+        // Ícones da Tab Bar - Caminhos corrigidos para ../../
         'home': require('../../assets/icons/casa.png'),
         'projetos': require('../../assets/icons/projetos.png'),
         'mensagens': require('../../assets/icons/mensagem.png'),
         'perfil': require('../../assets/icons/perfil.png'),
 
-        // Ícones dos StatCards
+        // Ícones dos StatCards - Caminhos corrigidos para ../../
         'investimento': require('../../assets/icons/investimento.png'),
         'profissionais': require('../../assets/icons/profissionais.png'),
         'avaliacao': require('../../assets/icons/avaliacao.png'),
+        'plus': require('../../assets/icons/plus.png'),
     };
 
     if (!icons[name]) return null;
