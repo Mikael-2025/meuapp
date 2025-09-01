@@ -6,7 +6,7 @@ export default function WelcomeScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
             <LinearGradient
-                colors={['#3B82F6', '#60A5FA']}
+                colors={['#4F46E5', '#318cfaff']}
                 style={styles.background}
             >
                 <View style={styles.content}>

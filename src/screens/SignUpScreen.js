@@ -1,37 +1,40 @@
 import React, { useState, useCallback } from 'react';
-// 1. O ScrollView foi removido para que a FlatList seja o container principal, eliminando o aviso.
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert, Dimensions, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+// 1. O ScrollView foi removido para que a FlatList seja o container principal.
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert, Dimensions, FlatList, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
 import { auth, db } from '../../firebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { doc, setDoc } from "firebase/firestore";
 
-// Lista de cidades para o autocompletar
 const BRAZILIAN_CITIES = [
-    "Aracaju, SE", "Belém, PA", "Belo Horizonte, MG", "Boa Vista, RR", "Brasília, DF",
-    "Campo Grande, MS", "Cuiabá, MT", "Curitiba, PR", "Florianópolis, SC", "Fortaleza, CE",
-    "Goiânia, GO", "João Pessoa, PB", "Macapá, AP", "Maceió, AL", "Manaus, AM",
-    "Natal, RN", "Palmas, TO", "Porto Alegre, RS", "Porto Velho, RO", "Recife, PE",
-    "Rio Branco, AC", "Rio de Janeiro, RJ", "Salvador, BA", "São Luís, MA", "São Paulo, SP",
-    "Teresina, PI", "Vitória, ES"
+    "Aracaju, SE", "Belém, PA", "Belo Horizonte, MG", "Boa Vista, RR", "Brasília, DF", "Campo Grande, MS", "Cuiabá, MT", "Curitiba, PR", "Florianópolis, SC", "Fortaleza, CE", "Goiânia, GO", "João Pessoa, PB", "Macapá, AP", "Maceió, AL", "Manaus, AM", "Natal, RN", "Palmas, TO", "Porto Alegre, RS", "Porto Velho, RO", "Recife, PE", "Rio Branco, AC", "Rio de Janeiro, RJ", "Salvador, BA", "São Luís, MA", "São Paulo, SP", "Teresina, PI", "Vitória, ES"
 ];
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// 2. Os componentes do formulário foram separados para otimização
-const FormHeader = ({ name, setName, email, setEmail, password, setPassword, phone, setPhone, location, handleLocationChange }) => (
+// 2. Os componentes do formulário foram separados para otimização com useCallback.
+const FormHeader = ({ name, setName, email, setEmail, password, setPassword, phone, setPhone, location, handleLocationChange, profileImage, pickImageAsync }) => (
     <>
         <Text style={styles.title}>Criar Conta</Text>
+        <TouchableOpacity style={styles.profilePicContainer} onPress={pickImageAsync}>
+            <View style={styles.avatarPlaceholder}>
+                {profileImage ? (
+                    <Image source={{ uri: profileImage }} style={styles.avatar} />
+                ) : (
+                    <Text style={styles.avatarPlaceholderIcon}>📷</Text>
+                )}
+            </View>
+            <View style={styles.addPhotoTextContainer}>
+                <Text style={styles.addPhotoText}>Adicionar Foto</Text>
+                <Text style={styles.addPhotoIcon}>+</Text>
+            </View>
+        </TouchableOpacity>
         <TextInput style={styles.input} placeholder="Nome Completo" value={name} onChangeText={setName} />
         <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <TextInput style={styles.input} placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
         <TextInput style={styles.input} placeholder="Telefone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        <TextInput 
-            style={styles.input} 
-            placeholder="Sua cidade / estado" 
-            value={location} 
-            onChangeText={handleLocationChange} 
-        />
+        <TextInput style={styles.input} placeholder="Sua cidade / estado" value={location} onChangeText={handleLocationChange} />
     </>
 );
 
@@ -74,6 +77,16 @@ export default function SignUpScreen({ navigation }) {
     const [userType, setUserType] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [filteredCities, setFilteredCities] = useState([]);
+    const [profileImage, setProfileImage] = useState(null);
+
+    const pickImageAsync = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true, quality: 1, aspect: [1, 1],
+        });
+        if (!result.canceled) {
+            setProfileImage(result.assets[0].uri);
+        }
+    };
 
     const handleLocationChange = (text) => {
         setLocation(text);
@@ -92,14 +105,18 @@ export default function SignUpScreen({ navigation }) {
 
     const handleSignUp = () => {
         if (!name || !email || !password || !userType || !phone || !location) {
-            Alert.alert("Erro", "Por favor, preencha todos os campos e selecione um tipo de perfil.");
+            Alert.alert("Erro", "Por favor, preencha todos os campos.");
             return;
         }
         setIsLoading(true);
         createUserWithEmailAndPassword(auth, email, password)
             .then(userCredential => {
                 const user = userCredential.user;
-                setDoc(doc(db, "users", user.uid), { name, email, userType, phone, location, profilePictureUrl: null });
+                setDoc(doc(db, "users", user.uid), {
+                    name, email, userType, phone, location, profilePictureUrl: null,
+                });
+                sendEmailVerification(user);
+                navigation.navigate('VerifyEmail');
             })
             .catch(error => Alert.alert("Erro no Cadastro", error.message))
             .finally(() => setIsLoading(false));
@@ -107,14 +124,13 @@ export default function SignUpScreen({ navigation }) {
 
     const curvePath = `M0,0 L0,150 Q${screenWidth / 2},220 ${screenWidth},150 L${screenWidth},0 Z`;
 
-    // 3. O 'useCallback' otimiza o FlatList para evitar que ele se redesenhe a cada letra digitada, corrigindo o bug de travamento.
     const renderSuggestionItem = useCallback(({ item }) => (
         <TouchableOpacity style={styles.suggestionItem} onPress={() => onCitySelect(item)}>
             <Text>{item}</Text>
         </TouchableOpacity>
     ), []);
 
-    // O conteúdo da lista é composto por um cabeçalho (a maioria do formulário), a lista de cidades, e um rodapé (o resto do formulário).
+    // 3. O conteúdo da lista é agora uma combinação de componentes e da lista de cidades
     const listContent = [
         { type: 'header', id: 'header' },
         ...filteredCities.map(city => ({ type: 'city', id: city })),
@@ -122,17 +138,17 @@ export default function SignUpScreen({ navigation }) {
     ];
 
     const renderItem = useCallback(({ item }) => {
-        if (item.type === 'header') {
-            return <FormHeader {...{ name, setName, email, setEmail, password, setPassword, phone, setPhone, location, handleLocationChange }} />;
+        switch (item.type) {
+            case 'header':
+                return <FormHeader {...{ name, setName, email, setEmail, password, setPassword, phone, setPhone, location, handleLocationChange, profileImage, pickImageAsync }} />;
+            case 'city':
+                return renderSuggestionItem({ item: item.id });
+            case 'footer':
+                return <FormFooter {...{ userType, setUserType, handleSignUp, isLoading, navigation }} />;
+            default:
+                return null;
         }
-        if (item.type === 'city') {
-            return renderSuggestionItem({ item: item.id });
-        }
-        if (item.type === 'footer') {
-            return <FormFooter {...{ userType, setUserType, handleSignUp, isLoading, navigation }} />;
-        }
-        return null;
-    }, [name, email, password, phone, location, userType, isLoading, filteredCities]); // Dependências para redesenhar
+    }, [name, email, password, phone, location, userType, isLoading, filteredCities, profileImage]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -142,11 +158,10 @@ export default function SignUpScreen({ navigation }) {
                         <Path d={curvePath} fill="#3B82F6" />
                     </Svg>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Text style={styles.backButtonText}>{''}</Text>
+                        <Text style={styles.backButtonText}>{'<'}</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* A FlatList agora controla toda a rolagem da tela */}
                 <FlatList
                     style={styles.formContainer}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -174,12 +189,20 @@ const styles = StyleSheet.create({
         paddingHorizontal: 30,
     },
     title: { fontSize: 24, fontWeight: 'bold', color: '#1F2937', textAlign: 'center', marginBottom: 20, paddingTop: 30 },
+    profilePicContainer: { alignItems: 'center', marginBottom: 20 },
+    avatar: { width: 120, height: 120, borderRadius: 60 },
+    avatarPlaceholder: {
+        width: 120, height: 120, borderRadius: 60, backgroundColor: '#F3F4F6',
+        justifyContent: 'center', alignItems: 'center', borderWidth: 3,
+        borderColor: '#FBBF24', marginBottom: 10,
+    },
+    avatarPlaceholderIcon: { fontSize: 40, color: '#9CA3AF' },
+    addPhotoTextContainer: { flexDirection: 'row', alignItems: 'center' },
+    addPhotoText: { color: '#6B7280', fontSize: 16 },
+    addPhotoIcon: { color: '#3B82F6', fontSize: 24, fontWeight: 'bold', marginLeft: 8 },
     input: { backgroundColor: '#F3F4F6', paddingVertical: 15, paddingHorizontal: 20, borderRadius: 10, marginBottom: 15, fontSize: 16 },
     suggestionItem: {
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
-        // Estilo ligeiramente diferente para se destacar dos inputs
+        padding: 15, borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
         backgroundColor: '#FAFAFA' 
     },
     typeSelectorLabel: { fontSize: 14, color: '#6B7280', marginBottom: 10, marginTop: 5 },

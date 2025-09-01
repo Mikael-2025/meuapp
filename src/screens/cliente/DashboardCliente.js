@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, FlatList } from 'react-native';
-import { auth, db } from '../../firebaseConfig';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { auth, db } from '../../../firebaseConfig';
 import { doc, getDoc } from "firebase/firestore";
-import Icon from '../components/Icon'; // Usaremos nosso componente de ícone
+import Icon from '../../components/Icon';
+import UserAvatar from '../../components/UserAvatar';
 
-// Componente para um cartão de estatística
-const StatCard = ({ title, value, icon }) => (
-    <View style={styles.statCard}>
+const StatCard = ({ title, value, icon, onPress }) => (
+    <TouchableOpacity style={styles.statCard} onPress={onPress}>
         <Icon name={icon} style={styles.statIcon} />
         <Text style={styles.statValue}>{value}</Text>
         <Text style={styles.statTitle}>{title}</Text>
-    </View>
+    </TouchableOpacity>
 );
 
-// Componente para um cartão de projeto
 const ProjectCard = ({ title, status, professional, progress }) => (
     <View style={styles.projectCard}>
         <View style={styles.projectHeader}>
@@ -29,7 +29,8 @@ const ProjectCard = ({ title, status, professional, progress }) => (
 );
 
 export default function DashboardCliente() {
-  const [userName, setUserName] = useState('');
+  const navigation = useNavigation();
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -38,14 +39,13 @@ export default function DashboardCliente() {
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          setUserName(userDoc.data().name);
+          setUserData(userDoc.data());
         }
       }
     };
     fetchUserData();
   }, []);
 
-  // Dados de exemplo para a lista de projetos
   const projects = [
       { id: '1', title: 'E-commerce App', status: 'Em Andamento', professional: 'Ricardo Silva', progress: 45 },
       { id: '2', title: 'Website Corporativo', status: 'Aguardando', professional: 'Juliana Costa', progress: 30 },
@@ -54,36 +54,29 @@ export default function DashboardCliente() {
 
   return (
     <SafeAreaView style={styles.container}>
-        {/* Cabeçalho */}
         <View style={styles.header}>
-            <View>
-                {/* Saudação ao usuário */}
+             <View>
                 <Text style={styles.headerGreeting}>Olá,</Text>
-                <Text style={styles.headerUserName}>{userName.split(' ')[0]}!</Text>
+                <Text style={styles.headerUserName}>{userData?.name?.split(' ')[0]}!</Text>
             </View>
-            <View style={styles.headerRight}>
-                <TouchableOpacity>
-                    <Icon name="notificacao" style={styles.headerIcon} />
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <Image source={{ uri: 'https://placehold.co/100x100/ffffff/3B82F6?text=A' }} style={styles.avatar} />
-                </TouchableOpacity>
-            </View>
+            {/* O TouchableOpacity agora tem um estilo para a borda */}
+            <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('Perfil')}>
+                <UserAvatar name={userData?.name} imageUrl={userData?.profilePictureUrl} size={40} />
+            </TouchableOpacity>
         </View>
 
-        {/* Cartões de Estatísticas */}
         <View style={styles.statsContainer}>
-            <StatCard title="Projetos Ativos" value="4" icon="projetos" />
-            <StatCard title="Investimento" value="R$ 24.7k" icon="investimento" />
-            <StatCard title="Profissionais" value="6" icon="profissionais" />
-            <StatCard title="Avaliação" value="4.8 ★" icon="avaliacao" />
+            <StatCard title="Projetos" value="4" icon="projetos" onPress={() => navigation.navigate('Projetos')} />
+            <StatCard title="Pagamentos" value="R$ 100" icon="pagamentos" onPress={() => navigation.navigate('Pagamentos')} />
+            <StatCard title="Buscar" value="6" icon="profissionais" onPress={() => navigation.navigate('FindProfessionals')} />
+            {/* O cartão de Avaliação agora navega para a nova tela "PendingReviews" */}
+            <StatCard title="Avaliar" value="0" icon="avaliacao" onPress={() => navigation.navigate('PendingReviews')} />
         </View>
 
-        {/* Corpo Principal com a Lista de Projetos */}
         <View style={styles.mainContent}>
              <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Projetos em Andamento</Text>
-                <TouchableOpacity><Text style={styles.seeAll}>Ver todos</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('Projetos')}><Text style={styles.seeAll}>Ver todos</Text></TouchableOpacity>
             </View>
             <FlatList
                 data={projects}
@@ -97,36 +90,51 @@ export default function DashboardCliente() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#1E40AF' },
+    container: { 
+        flex: 1, 
+        backgroundColor: '#4F46E5',
+    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingTop: 60,
         paddingHorizontal: 20,
-        paddingBottom: 30,
+        paddingBottom: 20,
+        backgroundColor: '#4F46E5',
     },
-    headerGreeting: { color: '#E0E1DD', fontSize: 18 },
-    headerUserName: { color: '#FFFFFF', fontSize: 28, fontWeight: 'bold' },
-    headerRight: { flexDirection: 'row', alignItems: 'center' },
-    headerIcon: { width: 24, height: 24, tintColor: '#FFFFFF', marginHorizontal: 10 },
-    avatar: { width: 40, height: 40, borderRadius: 20, marginLeft: 10 },
+    headerGreeting: { 
+        color: '#ffffff', 
+        fontSize: 18, 
+    },
+    headerUserName: {
+        color: '#FFFFFF',
+        fontSize: 28,
+        fontWeight: 'bold',
+    },
+    // Estilo para adicionar a borda ao avatar
+    avatarContainer: {
+        borderWidth: 2,
+        borderColor: '#ffe713ff', // Cor da borda
+        borderRadius: 22, // Metade do tamanho do avatar + a largura da borda
+    },
     statsContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingHorizontal: 15,
-        paddingBottom: 20,
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingBottom: 30,
+        backgroundColor: '#4F46E5'
     },
     statCard: {
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
         borderRadius: 15,
-        padding: 10,
+        paddingVertical: 15,
         width: '23%',
     },
-    statIcon: { width: 28, height: 28, tintColor: '#FFFFFF', marginBottom: 5 },
+    statIcon: { width: 28, height: 28, tintColor: '#FFFFFF', marginBottom: 8 },
     statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-    statTitle: { color: '#E0E1DD', fontSize: 10, textAlign: 'center' },
+    statTitle: { color: '#E0E7FF', fontSize: 10, textAlign: 'center', marginTop: 4 },
     mainContent: {
         flex: 1,
         backgroundColor: '#FFFFFF',
