@@ -11,9 +11,7 @@ import { doc, getDoc } from "firebase/firestore";
 import Icon from './src/components/Icon';
 import AddServiceButton from './src/components/AddServiceButton';
 
-// --- Importações com a Estrutura de Pastas Final ---
-
-// Telas de Autenticação e Partilhadas
+// --- Importações ---
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
@@ -40,13 +38,15 @@ import ChatScreen from './src/screens/cliente/ChatScreen';
 import DashboardProfissional from './src/screens/profissional/DashboardProfissional';
 import PostServiceScreen from './src/screens/profissional/PostServiceScreen';
 import ProposalsScreen from './src/screens/profissional/ProposalsScreen';
-import EarningsScreen from './src/screens/profissional/EarningsScreen'; // 1. Importe a nova tela
+import EarningsScreen from './src/screens/profissional/EarningsScreen';
+import CompletedProjectsScreen from './src/screens/profissional/CompletedProjectsScreen';
+import MyReviewsScreen from './src/screens/profissional/MyReviewsScreen';
 
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// --- Pilha de Autenticação ---
+// 1. A tela de verificação de email agora faz parte do fluxo de autenticação.
 const AuthStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -58,70 +58,73 @@ const AuthStack = () => (
 
 
 // --- Navegadores de Abas Separados ---
+const ClientTabs = ({ route }) => {
+    const { userType } = route.params;
+    return (
+        <Tab.Navigator screenOptions={({ route }) => ({
+            headerShown: false,
+            tabBarActiveTintColor: '#3B82F6',
+            tabBarInactiveTintColor: '#9CA3AF',
+            tabBarStyle: { height: 60, paddingBottom: 5 },
+            tabBarIcon: ({ focused }) => {
+                let iconName;
+                if (route.name === 'InícioCliente') iconName = 'home';
+                else if (route.name === 'Projetos') iconName = 'projetos';
+                else if (route.name === 'Pagamentos') iconName = 'pagamentos';
+                else if (route.name === 'Mensagens') iconName = 'mensagens';
+                else if (route.name === 'Perfil') iconName = 'perfil';
+                return <Icon name={iconName} focused={focused} />;
+            },
+        })}>
+            <Tab.Screen name="InícioCliente" component={DashboardCliente} options={{ title: 'Início' }} />
+            <Tab.Screen name="Projetos" component={ProjectsScreen} initialParams={{ userType }} />
+            <Tab.Screen name="Pagamentos" component={PaymentsScreen} initialParams={{ userType }} />
+            <Tab.Screen name="Mensagens" component={MessagesScreen} initialParams={{ userType }} />
+            <Tab.Screen name="Perfil" component={ProfileScreen} />
+        </Tab.Navigator>
+    );
+};
 
-// Barra de Navegação para o Cliente
-const ClientTabs = () => (
-    <Tab.Navigator screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: { height: 60, paddingBottom: 5 },
-        tabBarIcon: ({ focused }) => {
-            let iconName;
-            if (route.name === 'InícioCliente') iconName = 'home';
-            else if (route.name === 'Projetos') iconName = 'projetos';
-            else if (route.name === 'Pagamentos') iconName = 'pagamentos';
-            else if (route.name === 'Mensagens') iconName = 'mensagens';
-            else if (route.name === 'Perfil') iconName = 'perfil';
-            return <Icon name={iconName} focused={focused} />;
-        },
-    })}>
-        <Tab.Screen name="InícioCliente" component={DashboardCliente} options={{ title: 'Início' }} />
-        <Tab.Screen name="Projetos" component={ProjectsScreen} />
-        <Tab.Screen name="Pagamentos" component={PaymentsScreen} />
-        <Tab.Screen name="Mensagens" component={MessagesScreen} />
-        <Tab.Screen name="Perfil" component={ProfileScreen} />
-    </Tab.Navigator>
-);
-
-// Barra de Navegação para o Profissional
-const ProfessionalTabs = () => (
-     <Tab.Navigator screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: { height: 60, paddingBottom: 5 },
-        tabBarIcon: ({ focused }) => {
-            let iconName;
-            if (route.name === 'InícioProfissional') iconName = 'home';
-            else if (route.name === 'Propostas') iconName = 'propostas';
-            else if (route.name === 'Mensagens') iconName = 'mensagens';
-            else if (route.name === 'Perfil') iconName = 'perfil';
-            return <Icon name={iconName} focused={focused} />;
-        },
-    })}>
-        <Tab.Screen name="InícioProfissional" component={DashboardProfissional} options={{ title: 'Início' }} />
-        <Tab.Screen name="Propostas" component={ProposalsScreen} />
-        <Tab.Screen 
-            name="PostServiceTab" 
-            component={View} // Componente vazio
-            options={{
-                tabBarButton: (props) => <AddServiceButton {...props} />,
-            }}
-        />
-        <Tab.Screen name="Mensagens" component={MessagesScreen} />
-        <Tab.Screen name="Perfil" component={ProfileScreen} />
-    </Tab.Navigator>
-);
+const ProfessionalTabs = ({ route }) => {
+    const { userType } = route.params;
+    return (
+         <Tab.Navigator screenOptions={({ route }) => ({
+            headerShown: false,
+            tabBarActiveTintColor: '#3B82F6',
+            tabBarInactiveTintColor: '#9CA3AF',
+            tabBarStyle: { height: 60, paddingBottom: 5 },
+            tabBarIcon: ({ focused }) => {
+                let iconName;
+                if (route.name === 'InícioProfissional') iconName = 'home';
+                else if (route.name === 'Propostas') iconName = 'propostas';
+                else if (route.name === 'Mensagens') iconName = 'mensagens';
+                else if (route.name === 'Perfil') iconName = 'perfil';
+                return <Icon name={iconName} focused={focused} />;
+            },
+        })}>
+            <Tab.Screen name="InícioProfissional" component={DashboardProfissional} options={{ title: 'Início' }} />
+            <Tab.Screen name="Propostas" component={ProposalsScreen} initialParams={{ userType }} />
+            <Tab.Screen 
+                name="PostServiceTab" 
+                component={View} // Componente vazio
+                options={{
+                    tabBarButton: (props) => <AddServiceButton {...props} />,
+                }}
+            />
+            <Tab.Screen name="Mensagens" component={MessagesScreen} initialParams={{ userType }} />
+            <Tab.Screen name="Perfil" component={ProfileScreen} />
+        </Tab.Navigator>
+    );
+};
 
 
 // --- Pilha Principal da Aplicação ---
 const AppStack = ({ userType }) => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         {userType === 'cliente' ? (
-             <Stack.Screen name="ClientRoot" component={ClientTabs} />
+             <Stack.Screen name="ClientRoot" component={ClientTabs} initialParams={{ userType }} />
         ) : (
-             <Stack.Screen name="ProfessionalRoot" component={ProfessionalTabs} />
+             <Stack.Screen name="ProfessionalRoot" component={ProfessionalTabs} initialParams={{ userType }} />
         )}
 
         {/* Telas que podem ser acedidas a partir de qualquer navegador */}
@@ -136,8 +139,9 @@ const AppStack = ({ userType }) => (
         <Stack.Screen name="PendingReviews" component={PendingReviewsScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="PostService" component={PostServiceScreen} />
-        {/* 2. Adicione a nova rota aqui */}
-        <Stack.Screen name="Earnings" component={EarningsScreen} /> 
+        <Stack.Screen name="Earnings" component={EarningsScreen} />
+        <Stack.Screen name="CompletedProjects" component={CompletedProjectsScreen} />
+        <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
     </Stack.Navigator>
 );
 
@@ -151,16 +155,15 @@ export default function App() {
         const unsubscribe = onAuthStateChanged(auth, async (authenticatedUser) => {
             if (authenticatedUser) {
                 await authenticatedUser.reload();
+                setUser(authenticatedUser); // Guarda sempre o utilizador
                 if (authenticatedUser.emailVerified) {
                     const userDocRef = doc(db, "users", authenticatedUser.uid);
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists()) {
                         setUserType(userDoc.data().userType);
                     }
-                    setUser(authenticatedUser);
                     setIsEmailVerified(true);
                 } else {
-                    setUser(authenticatedUser);
                     setIsEmailVerified(false);
                 }
             } else {
@@ -176,17 +179,10 @@ export default function App() {
         return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" /></View>;
     }
 
+    // 2. A lógica de renderização foi simplificada. Se o utilizador estiver verificado, mostra o App. Senão, mostra o fluxo de autenticação.
     return (
         <NavigationContainer>
-            {user && !isEmailVerified ? (
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
-                </Stack.Navigator>
-            ) : user ? (
-                <AppStack userType={userType} />
-            ) : (
-                <AuthStack />
-            )}
+            {user && isEmailVerified ? <AppStack userType={userType} /> : <AuthStack />}
         </NavigationContainer>
     );
 }

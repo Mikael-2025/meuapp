@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native'; // 1. Importe o useNavigation
 import { auth } from '../../firebaseConfig';
 import { sendEmailVerification, signOut } from 'firebase/auth';
 
-export default function VerifyEmailScreen({ navigation }) {
-    // 1. O 'user' agora é obtido do auth, que é sempre seguro
+export default function VerifyEmailScreen() {
+    const navigation = useNavigation(); // 2. Obtenha o objeto de navegação
     const user = auth.currentUser;
 
     const handleResendEmail = () => {
@@ -16,9 +17,15 @@ export default function VerifyEmailScreen({ navigation }) {
         }
     };
 
-    const handleBackToLogin = () => {
-        signOut(auth);
-        // A navegação para AuthStack irá automaticamente mostrar a tela de Welcome
+    // 3. A função foi atualizada para fazer o logout e depois navegar
+    const handleBackToLogin = async () => {
+        try {
+            await signOut(auth);
+            // Agora, navegamos explicitamente de volta para a tela de Boas-Vindas
+            navigation.navigate('Welcome'); 
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
+        }
     };
 
     return (
@@ -28,7 +35,6 @@ export default function VerifyEmailScreen({ navigation }) {
                 <Text style={styles.title}>Verifique o seu Email</Text>
                 <Text style={styles.subtitle}>
                     Enviámos um link de confirmação para
-                    {/* 2. Usamos o "optional chaining" (?.) para evitar o erro caso o email ainda não tenha carregado */}
                     <Text style={styles.emailText}> {user?.email}</Text>.
                     Por favor, verifique a sua caixa de entrada e a de spam.
                 </Text>
@@ -38,7 +44,7 @@ export default function VerifyEmailScreen({ navigation }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleBackToLogin}>
-                    <Text style={styles.secondaryButtonText}>Voltar para o Login</Text>
+                    <Text style={styles.secondaryButtonText}>Voltar para o Início</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

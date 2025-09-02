@@ -57,7 +57,7 @@ export default function DashboardProfissional() {
   return (
     <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.headerTitle}>Seu Painel, {userData?.name?.split(' ')[0]}!</Text>
+            <Text style={styles.headerTitle}>Olá, {userData?.name?.split(' ')[0]}!</Text>
             <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('Perfil')}>
                 <UserAvatar name={userData?.name} imageUrl={userData?.profilePictureUrl} size={40} />
             </TouchableOpacity>
@@ -65,10 +65,9 @@ export default function DashboardProfissional() {
 
         <View style={styles.statsContainer}>
             <StatCard title="Ganhos no Mês" value="R$ 7.8k" icon="investimento" onPress={() => navigation.navigate('Earnings')} />
-            {/* O onPress foi corrigido para navegar para a tela de Projetos Concluídos */}
             <StatCard title="Projetos Concluídos" value="12" icon="concluido" onPress={() => navigation.navigate('CompletedProjects')} />
             <StatCard title="Novas Propostas" value="3" icon="propostas" onPress={() => navigation.navigate('Propostas')} />
-            <StatCard title="Sua Avaliação" value="4.9 ★" icon="avaliacao" onPress={() => {}} />
+            <StatCard title="Sua Avaliação" value="4.9 ★" icon="avaliacao" onPress={() => navigation.navigate('MyReviews')} />
         </View>
 
         <View style={styles.mainContent}>
@@ -87,7 +86,7 @@ export default function DashboardProfissional() {
   );
 }
 
-// Estilos mantidos com as suas modificações de cor
+// Estilos que correspondem ao seu design preferido
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
@@ -109,26 +108,36 @@ const styles = StyleSheet.create({
     },
     avatarContainer: {
         borderWidth: 2,
-        borderColor: '#FBBF24', // Borda amarela
+        borderColor: '#FBBF24',
         borderRadius: 22,
     },
     statsContainer: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingBottom: 30,
-        backgroundColor: '#4F46E5'
+        paddingTop: 20, // Adicionado paddingTop para separar do header
+        paddingBottom: 10,
+        backgroundColor: '#4F46E5',
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
     statCard: {
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.2)',
-        borderRadius: 15,
-        paddingVertical: 15,
-        width: '23%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        paddingVertical: 20,
+        width: '48%',
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    statIcon: { width: 28, height: 28, tintColor: '#FFFFFF', marginBottom: 8 },
-    statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-    statTitle: { color: '#E0E7FF', fontSize: 10, textAlign: 'center', marginTop: 4 },
+    statIcon: { width: 28, height: 28, tintColor: '#3B82F6', marginBottom: 8 },
+    statValue: { color: '#1F2937', fontSize: 18, fontWeight: 'bold' },
+    statTitle: { color: '#6B7280', fontSize: 12, marginTop: 4 },
     mainContent: {
         flex: 1,
         paddingHorizontal: 20,

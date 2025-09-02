@@ -1,18 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity } from 'react-native';
+// 1. O ActivityIndicator foi adicionado à importação
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from '../../components/Icon';
 
-// Dados de exemplo para o extrato
 const MOCK_TRANSACTIONS = [
     { id: '1', projectName: 'Desenvolvimento de App Mobile', clientName: 'Ana Ferreira', amount: '4.000,00', date: '28/08/2025' },
     { id: '2', projectName: 'Criação de Website', clientName: 'Carlos Souza', amount: '2.000,00', date: '25/08/2025' },
-    { id: '3', projectName: 'Manutenção de E-commerce', clientName: 'Juliana Costa', amount: '1.500,00', date: '22/08/2025' },
-    { id: '4', projectName: 'Consultoria de UI/UX', clientName: 'Pedro Martins', amount: '300,00', date: '20/08/2025' },
 ];
 
-// Componente para um item do extrato
 const TransactionItem = ({ item }) => (
     <View style={styles.transactionItem}>
         <Icon name="receber" style={styles.transactionIcon} />
@@ -135,3 +132,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
+

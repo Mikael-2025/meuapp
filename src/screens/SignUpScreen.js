@@ -155,10 +155,10 @@ export default function SignUpScreen({ navigation }) {
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
                 <View style={styles.headerContainer}>
                     <Svg height="100%" width="100%" style={{ position: 'absolute' }}>
-                        <Path d={curvePath} fill="#3B82F6" />
+                        <Path d={curvePath} fill="#4F46E5" />
                     </Svg>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Text style={styles.backButtonText}>{'<'}</Text>
+                        <Text style={styles.backButtonText}>{''}</Text>
                     </TouchableOpacity>
                 </View>
 
